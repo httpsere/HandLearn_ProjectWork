@@ -1,0 +1,380 @@
+<!doctype html>
+<html>
+<head>
+  <title>Gesture Game</title>
+
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-backend-webgl"></script>
+
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/control_utils/control_utils.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js"></script>
+
+  <style>
+    body {
+      margin:0;
+      font-family: Arial, sans-serif;
+      background: #222;
+      color: #fff;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    #gameUI, #leaderboardBox {
+      width: 640px;
+      margin-top: 10px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+    }
+
+    #infoBars {
+      display: flex;
+      justify-content: space-between;
+      width: 100%;
+      font-size: 18px;
+    }
+
+    #gestureBox {
+      background: #333;
+      padding: 10px 20px;
+      border-radius: 10px;
+      font-size: 24px;
+      font-weight: bold;
+      text-align: center;
+      min-width: 300px;
+    }
+
+    #timerBarContainer {
+      width: 100%;
+      height: 20px;
+      background: #555;
+      border-radius: 10px;
+      overflow: hidden;
+    }
+
+    #timerBar {
+      height: 100%;
+      background: #0f0;
+      width: 100%;
+      transition: width 0.2s linear;
+    }
+
+    video, canvas {
+      position: relative;
+      width: 640px;
+      height: 480px;
+      border-radius: 10px;
+      background: #000;
+    }
+
+    canvas { 
+      position: absolute;
+      top:0;
+      left:0;
+    }
+
+    button {
+      padding: 10px 20px;
+      font-size: 20px;
+      border-radius: 10px;
+      border: none;
+      cursor: pointer;
+      background: #0a84ff;
+      color: #fff;
+    }
+
+    button:hover {
+      background: #006fcc;
+    }
+
+  </style>
+</head>
+<body>
+
+<h1>Gesture Game</h1>
+
+<button id="startButton">Gioca</button>
+
+<div id="gameUI" style="display:none;">
+  <div id="gestureBox">Mostrati davanti alla videocamera</div>
+  <div id="timerBarContainer">
+    <div id="timerBar"></div>
+  </div>
+  <div id="infoBars">
+    <div id="score">Punti: 0</div>
+    <div id="multiplier">Moltiplicatore: x1</div>
+    <div id="lives">Vite: 3</div>
+  </div>
+</div>
+
+<!-- Video + canvas -->
+<div style="position:relative; width:640px; height:480px; display:none;" id="cameraContainer">
+  <video id="video" autoplay></video>
+  <canvas id="canvas"></canvas>
+</div>
+
+<div id="leaderboardBox" style="display:none;">
+  <h2>Classifica Top 10</h2>
+  <ol id="leaderboardList"></ol>
+  <button id="restartButton">Gioca di nuovo</button>
+</div>
+
+<script>
+const video = document.getElementById("video");
+const canvas = document.getElementById("canvas");
+const ctx = canvas.getContext("2d");
+
+const startButton = document.getElementById("startButton");
+const restartButton = document.getElementById("restartButton");
+const cameraContainer = document.getElementById("cameraContainer");
+
+const gestureBox = document.getElementById("gestureBox");
+const timerBar = document.getElementById("timerBar");
+const scoreEl = document.getElementById("score");
+const multiplierEl = document.getElementById("multiplier");
+const livesEl = document.getElementById("lives");
+
+const leaderboardBox = document.getElementById("leaderboardBox");
+const leaderboardList = document.getElementById("leaderboardList");
+
+const HAND_CONNECTIONS = window.HAND_CONNECTIONS;
+
+let model, reverseLabelMap;
+let gameInterval, hands, camera;
+
+// --- Stato gioco ---
+let score=0, lives=3, streak=0, multiplier=1;
+let currentGesture="", lastGesture="", timeLeft=8;
+let lastSuccessTime=0;
+let gameStarted = false;
+
+// --- Funzioni gioco ---
+async function initGame(){
+  stopCamera();
+
+  const newVideo = resetVideoElement();
+  window.video = newVideo; // aggiorna riferimento globale
+
+  // delay
+  await new Promise(res => setTimeout(res, 300));
+
+  startButton.style.display="none";
+  leaderboardBox.style.display="none";
+  cameraContainer.style.display="block";
+  document.getElementById("gameUI").style.display="flex";
+
+  // carica modello se non caricato
+  if(!model){
+    model = await tf.loadLayersModel("/model/model.json");
+    const labels = await fetch("/model/labels.json").then(r => r.json());
+    reverseLabelMap = {};
+    labels.forEach((l,i)=>{ reverseLabelMap[i]=l; });
+  }
+
+  score=0; lives=3; streak=0; multiplier=1;
+  updateUI();
+
+  setupHands();
+  pickRandomGesture();
+  setTimeout(()=>{
+    startGameLoop(); //parte SOLO dopo 3 secondi
+  }, 3000);}
+
+// --- Setup Mediapipe ---
+function setupHands(){
+  const videoEl = document.getElementById("video"); //sempre nuovo video
+
+  hands = new Hands({ locateFile: file => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}` });
+  hands.setOptions({
+    selfieMode: true,
+    maxNumHands: 1,
+    modelComplexity: 1,
+    minDetectionConfidence: 0.7,
+    minTrackingConfidence: 0.7
+  });
+  hands.onResults(onHandsResults);
+
+  camera = new Camera(videoEl,{
+    onFrame: async()=>{ if(videoEl.readyState===4) await hands.send({image:videoEl}); },
+    width:640, height:480
+  });
+  camera.start();
+}
+
+// --- Risultati Mediapipe ---
+function onHandsResults(results){
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  ctx.drawImage(results.image,0,0,canvas.width,canvas.height);
+
+  if(!results.multiHandLandmarks || results.multiHandLandmarks.length===0) return;
+
+  const lm = results.multiHandLandmarks[0];
+  const base = lm[0];
+  const scale = Math.hypot(lm[9].x-base.x, lm[9].y-base.y, lm[9].z-base.z);
+  const features = lm.flatMap(p=>[(p.x-base.x)/scale,(p.y-base.y)/scale,(p.z-base.z)/scale]);
+
+  tf.tidy(()=>{
+    const input = tf.tensor2d([features]);
+    const prediction = model.predict(input);
+    const scores = Array.from(prediction.dataSync());
+    const indexed = scores.map((score,i)=>({score,index:i}));
+    indexed.sort((a,b)=>b.score-a.score);
+    const best = indexed[0];
+    const predictedLabel = reverseLabelMap[best.index];
+    const confidence = best.score;
+
+    let color = "#FF0000"; 
+    if(currentGesture && predictedLabel===currentGesture && confidence>0.85){
+      const now = Date.now();
+      if(now-lastSuccessTime>1000){
+        handleSuccess();
+        pickRandomGesture();
+        lastSuccessTime = now;
+      }
+      color="#00FF00";
+    }
+
+    for(let i=0;i<21;i++){
+      drawLandmarks(ctx,[lm[i]],{color:color,lineWidth:2,radius:3});
+    }
+    for(const [i,j] of HAND_CONNECTIONS){
+      ctx.beginPath();
+      ctx.moveTo(lm[i].x*canvas.width,lm[i].y*canvas.height);
+      ctx.lineTo(lm[j].x*canvas.width,lm[j].y*canvas.height);
+      ctx.strokeStyle=color;
+      ctx.lineWidth=2;
+      ctx.stroke();
+    }
+  });
+}
+
+// --- Game Loop ---
+function startGameLoop(){
+  if(gameInterval)clearInterval(gameInterval);
+  gameInterval = setInterval(()=>{
+    timeLeft -= 0.1;
+    if(timeLeft<0) timeLeft=0;
+    timerBar.style.width = (timeLeft/8*100)+"%";
+    if(timeLeft<=0){
+      handleFailure();
+      pickRandomGesture();
+    }
+  },100);
+}
+
+function pickRandomGesture(){
+  const labels = Object.values(reverseLabelMap);
+  do{ currentGesture=labels[Math.floor(Math.random()*labels.length)]; }
+  while(currentGesture===lastGesture);
+  lastGesture=currentGesture;
+  gestureBox.textContent = "Fai il gesto: " + currentGesture;
+  timeLeft=8;
+  timerBar.style.width="100%";
+}
+
+function handleSuccess(){
+  streak++;
+  multiplier = streak>=10?10:(streak>=3?3:1);
+  score += 10*multiplier;
+  updateUI();
+}
+
+function handleFailure(){
+  lives--;
+  streak=0;
+  multiplier=1;
+  score-=5;
+  updateUI();
+  if(lives<=0) endGame();
+}
+
+function updateUI(){
+  scoreEl.textContent = "Punti: " + score;
+  multiplierEl.textContent = "Moltiplicatore: x" + multiplier;
+  livesEl.textContent = "Vite: " + lives;
+}
+function stopCamera(){
+  // stop loop
+  if(gameInterval){
+    clearInterval(gameInterval);
+    gameInterval = null;
+  }
+
+  // stop MediaPipe camera
+  if(camera){
+    try { camera.stop(); } catch(e){}
+    camera = null;
+  }
+
+  // stop stream reale
+  if(video.srcObject){
+    video.srcObject.getTracks().forEach(track => track.stop());
+  }
+
+  // chiudi hands
+  if(hands){
+    try { hands.close(); } catch(e){}
+    hands = null;
+  }
+}
+
+function resetVideoElement(){
+  const oldVideo = document.getElementById("video");
+
+  const newVideo = document.createElement("video");
+  newVideo.id = "video";
+  newVideo.autoplay = true;
+  newVideo.width = 640;
+  newVideo.height = 480;
+
+  oldVideo.parentNode.replaceChild(newVideo, oldVideo);
+
+  return newVideo;
+}
+
+// --- Game Over ---
+async function endGame(){
+  clearInterval(gameInterval);
+  stopCamera();
+
+  gestureBox.textContent = "Game Over! Punteggio: "+score;
+  cameraContainer.style.display="none";
+  document.getElementById("gameUI").style.display="none";
+  leaderboardBox.style.display="block";
+
+  let name = prompt("Inserisci il tuo nome per la classifica:", "Player");
+  if(!name) name="Player";
+
+  try{
+    const res = await fetch('/saveScore', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({name, score})
+    });
+    const topScores = await res.json();
+    updateLeaderboard(topScores);
+  } catch(err){
+    console.error("Errore salvataggio punteggio",err);
+  }
+}
+
+function updateLeaderboard(scores){
+  leaderboardList.innerHTML="";
+  scores.forEach(s=>{
+    const li=document.createElement('li');
+    li.textContent = `${s.name}: ${s.score}`;
+    leaderboardList.appendChild(li);
+  });
+}
+
+// --- Eventi tasti ---
+startButton.addEventListener('click', initGame);
+restartButton.addEventListener('click', initGame);
+
+</script>
+</body>
+</html>

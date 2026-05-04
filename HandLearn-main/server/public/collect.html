@@ -1,0 +1,187 @@
+<!doctype html>
+<html>
+<head>
+<title>Gesture Collector</title>
+
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
+
+<style>
+body { font-family: sans-serif; }
+
+#container{
+  position:relative;
+  width:640px;
+  height:480px;
+}
+
+video, canvas {
+  position:absolute;
+  left:0;
+  top:0;
+  transform:scaleX(-1); /* SPECCHIATO */
+}
+
+canvas{z-index:2;}
+video{z-index:1;}
+
+#info{margin-top:500px;}
+</style>
+</head>
+
+<body>
+
+<h2>Gesture Collector</h2>
+<p>Premi <b>S</b> per salvare un campione</p>
+
+<div id="container">
+  <video id="video" width="640" height="480" autoplay playsinline></video>
+  <canvas id="canvas" width="640" height="480"></canvas>
+</div>
+
+<div id="info">
+Segno: <b><span id="label">NESSUNO</span></b><br>
+Campioni salvati: <span id="count">0</span>
+</div>
+
+<script>
+
+let count = 0;
+let collecting = false;
+
+const labelDisplay = document.getElementById("label")
+const countDisplay = document.getElementById("count")
+
+let lastLandmarks = null;
+
+async function saveSample(features,label){
+  await fetch("/save",{
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({features,label})
+  })
+  count++;
+  countDisplay.textContent = count;
+}
+
+const video=document.getElementById("video")
+const canvas=document.getElementById("canvas")
+const ctx=canvas.getContext("2d")
+
+const hands = new Hands({
+ locateFile:(file)=>{
+   return `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`
+ }
+})
+
+hands.setOptions({
+ maxNumHands:1,
+ modelComplexity:1,
+ minDetectionConfidence:0.5,
+ minTrackingConfidence:0.5
+})
+
+hands.onResults((results)=>{
+  ctx.clearRect(0,0,canvas.width,canvas.height)
+
+  if(!results.multiHandLandmarks || results.multiHandLandmarks.length===0){
+    lastLandmarks = null;
+    return
+  }
+
+  const lm = results.multiHandLandmarks[0]
+  lastLandmarks = lm
+
+  for(const p of lm){
+    ctx.beginPath()
+    ctx.arc(p.x*canvas.width, p.y*canvas.height, 5, 0, Math.PI*2)
+    ctx.fillStyle="red"
+    ctx.fill()
+  }
+
+  const connections=[
+    [0,1],[1,2],[2,3],[3,4],
+    [0,5],[5,6],[6,7],[7,8],
+    [0,9],[9,10],[10,11],[11,12],
+    [0,13],[13,14],[14,15],[15,16],
+    [0,17],[17,18],[18,19],[19,20]
+  ]
+  for(const [a,b] of connections){
+    ctx.beginPath()
+    ctx.moveTo(lm[a].x*canvas.width, lm[a].y*canvas.height)
+    ctx.lineTo(lm[b].x*canvas.width, lm[b].y*canvas.height)
+    ctx.strokeStyle="white"
+    ctx.lineWidth=2
+    ctx.stroke()
+  }
+})
+
+document.addEventListener("keydown", async (e)=>{
+  if(e.key.toLowerCase() === "s"){
+    if(!lastLandmarks){
+      alert("Nessuna mano rilevata!");
+      return;
+    }
+
+    const label = prompt("Nome del segno:");
+    if(!label) return;
+    labelDisplay.textContent = label;
+
+    const base = lastLandmarks[0];
+    const scale = Math.hypot(
+      lastLandmarks[9].x - base.x,
+      lastLandmarks[9].y - base.y,
+      lastLandmarks[9].z - base.z
+    );
+
+    const features = lastLandmarks.flatMap(p => [
+      (p.x - base.x)/scale,
+      (p.y - base.y)/scale,
+      (p.z - base.z)/scale
+    ]);
+
+if (collecting) return;
+
+collecting = true;
+
+for (let i = 0; i < 20; i++) {
+
+  if (!lastLandmarks) break;
+
+  const base = lastLandmarks[0];
+  const scale = Math.hypot(
+    lastLandmarks[9].x - base.x,
+    lastLandmarks[9].y - base.y,
+    lastLandmarks[9].z - base.z
+  );
+
+  const features = lastLandmarks.flatMap(p => [
+    (p.x - base.x) / scale,
+    (p.y - base.y) / scale,
+    (p.z - base.z) / scale
+  ]);
+
+  await saveSample(features, label);
+
+  await new Promise(r => setTimeout(r, 80));
+}
+
+collecting = false;
+  }
+});
+
+const camera = new Camera(video,{
+  onFrame: async ()=>{
+    if(!video.videoWidth || !video.videoHeight) return
+    await hands.send({image:video})
+  },
+  width:640,
+  height:480
+})
+
+camera.start()
+
+</script>
+
+</body>
+</html>

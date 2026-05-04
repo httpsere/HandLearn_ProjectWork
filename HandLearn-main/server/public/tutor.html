@@ -1,0 +1,161 @@
+<!doctype html>
+<html>
+<head>
+  <title>Gesture Tutor</title>
+
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-backend-webgl"></script>
+
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/control_utils/control_utils.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js"></script>
+
+  <style>
+    body { text-align:center; font-family:sans-serif; }
+    video, canvas {
+      position: absolute;
+      left: 0;
+      top: 0;
+      transform: scaleX(1); /* mano non specchiata */
+    }
+    canvas { z-index: 2; }
+    video { z-index: 1; }
+    #gestureSelect { position: absolute; top: 10px; left: 150px; z-index: 3; font-size: 20px; }
+  </style>
+</head>
+<body>
+
+<h2>Gesture Tutor</h2>
+<h3 id="result">Caricamento modello...</h3>
+
+<select id="gestureSelect">
+  <option value="">Seleziona un gesto...</option>
+</select>
+
+<video id="video" width="640" height="480" autoplay></video>
+<canvas id="canvas" width="640" height="480"></canvas>
+
+<script>
+const video = document.getElementById("video");
+const canvas = document.getElementById("canvas");
+const ctx = canvas.getContext("2d");
+const result = document.getElementById("result");
+const gestureSelect = document.getElementById("gestureSelect");
+const HAND_CONNECTIONS = window.HAND_CONNECTIONS;
+
+let model, reverseLabelMap;
+let targetLabel = "";
+
+async function init() {
+  model = await tf.loadLayersModel("/model/model.json");
+  const labels = await fetch("/model/labels.json").then(r => r.json());
+  reverseLabelMap = {};
+  labels.forEach((l, i) => {
+    reverseLabelMap[i] = l;
+    const option = document.createElement("option");
+    option.value = l;
+    option.textContent = l;
+    gestureSelect.appendChild(option);
+  });
+
+  result.textContent = "Seleziona un gesto e mostrati davanti alla videocamera";
+
+  gestureSelect.addEventListener("change", e => { targetLabel = e.target.value; });
+
+  const hands = new Hands({ locateFile: file => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}` });
+  hands.setOptions({
+    selfieMode: true,
+    maxNumHands: 1,
+    modelComplexity: 1,
+    minDetectionConfidence: 0.7,
+    minTrackingConfidence: 0.7
+  });
+
+  hands.onResults(results => {
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    ctx.drawImage(results.image,0,0,canvas.width,canvas.height);
+
+    if(!results.multiHandLandmarks || results.multiHandLandmarks.length===0){
+      result.textContent = "Nessuna mano rilevata";
+      return;
+    }
+
+    if(!targetLabel) {
+      result.textContent = "Seleziona un gesto dal menu";
+      return;
+    }
+
+    const lm = results.multiHandLandmarks[0];
+
+    // Normalizza landmark per il modello
+    const base = lm[0];
+    const scale = Math.hypot(lm[9].x-base.x, lm[9].y-base.y, lm[9].z-base.z);
+    const features = lm.flatMap(p=>[(p.x-base.x)/scale, (p.y-base.y)/scale, (p.z-base.z)/scale]);
+
+    tf.tidy(()=>{
+      const input = tf.tensor2d([features]);
+      const prediction = model.predict(input);
+      const scores = Array.from(prediction.dataSync());
+
+      const indexed = scores.map((score,i)=>({score,index:i}));
+      indexed.sort((a,b)=>b.score-a.score);
+      const best = indexed[0];
+
+      const predictedLabel = reverseLabelMap[best.index];
+      const confidence = best.score;
+
+      let color = "#FF0000"; // default rosso
+      let msg = "Errato";
+
+      if(predictedLabel === targetLabel){
+        if(confidence >= 0.9) {
+          color = "#00FF00"; // verde
+          msg = "Perfetto!";
+        } else if(confidence >= 0.7) {
+          color = "#FFFF00"; // giallo
+          msg = "Ci sei quasi";
+        } else {
+          color = "#FF0000";
+          msg = "Stai sbagliando";
+        }
+      }
+
+      // Disegna landmarks
+      for(let i=0;i<21;i++){
+        drawLandmarks(ctx,[lm[i]],{color,lineWidth:5});
+      }
+
+      // Disegna connessioni
+      for(const [i,j] of HAND_CONNECTIONS){
+        ctx.beginPath();
+        ctx.moveTo(lm[i].x*canvas.width,lm[i].y*canvas.height);
+        ctx.lineTo(lm[j].x*canvas.width,lm[j].y*canvas.height);
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 3;
+        ctx.stroke();
+      }
+
+      // Messaggio in alto
+      ctx.save();
+      ctx.setTransform(1,0,0,1,0,0); // reset specchio
+      ctx.fillStyle = "#FFFFFF";
+      ctx.font = "30px Arial";
+      ctx.fillText(msg,10,40);
+      ctx.restore();
+    });
+  });
+
+  const camera = new Camera(video,{
+    onFrame: async()=>{ if(video.readyState===4) await hands.send({image:video}); },
+    width:640,
+    height:480
+  });
+  camera.start();
+}
+
+init();
+</script>
+
+</body>
+</html>

@@ -1,0 +1,17 @@
+{
+  "name": "handlearn-server",
+  "version": "1.0.0",
+  "description": "Backend Node.js / Express per il riconoscimento gesti AI di HandLearn",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "train": "node train.js",
+    "mean":  "node mean.js"
+  },
+  "dependencies": {
+    "@tensorflow/tfjs": "^4.22.0",
+    "@tensorflow/tfjs-node": "^4.22.0",
+    "csv-parser": "^3.0.0",
+    "express": "^4.19.2"
+  }
+}

@@ -1,0 +1,128 @@
+<!doctype html>
+<html>
+<head>
+  <title>Gesture Recognition</title>
+
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-backend-webgl"></script>
+
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/control_utils/control_utils.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js"></script>
+
+  <style>
+    body { text-align:center; font-family:sans-serif; }
+    video, canvas {
+      position: absolute;
+      left: 0;
+      top: 0;
+      transform: scaleX(1); /*mano non specchiata */
+    }
+    canvas { z-index: 2; }
+    video { z-index: 1; }
+  </style>
+</head>
+<body>
+
+<h2>Gesture Recognition</h2>
+<h3 id="result">Caricamento modello...</h3>
+
+<video id="video" width="640" height="480" autoplay></video>
+<canvas id="canvas" width="640" height="480"></canvas>
+
+<script>
+const video = document.getElementById("video");
+const canvas = document.getElementById("canvas");
+const ctx = canvas.getContext("2d");
+const result = document.getElementById("result");
+const HAND_CONNECTIONS = window.HAND_CONNECTIONS;
+
+let model;
+let reverseLabelMap;
+
+async function init() {
+  model = await tf.loadLayersModel("/model/model.json");
+  const labels = await fetch("/model/labels.json").then(r => r.json());
+
+  // Mappa inversa: indice -> label
+  reverseLabelMap = {};
+  labels.forEach((l, i) => reverseLabelMap[i] = l);
+
+  result.textContent = "Mostra un gesto";
+
+  const hands = new Hands({
+    locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`
+  });
+
+  hands.setOptions({
+    selfieMode: true,
+    maxNumHands: 1,
+    modelComplexity: 1,
+    minDetectionConfidence: 0.7,
+    minTrackingConfidence: 0.7
+  });
+
+  hands.onResults((results) => {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.drawImage(results.image, 0, 0, canvas.width, canvas.height);
+
+    if (!results.multiHandLandmarks || results.multiHandLandmarks.length === 0) {
+      result.textContent = "Nessuna mano rilevata";
+      return;
+    }
+
+    const lm = results.multiHandLandmarks[0];
+
+    drawConnectors(ctx, lm, HAND_CONNECTIONS, { color: "#00FF00", lineWidth: 2 });
+    drawLandmarks(ctx, lm, { color: "#FF0000", lineWidth: 1 });
+
+    const base = lm[0];
+    const scale = Math.hypot(
+      lm[9].x - base.x,
+      lm[9].y - base.y,
+      lm[9].z - base.z
+    );
+
+    const features = lm.flatMap(p => [
+      (p.x - base.x) / scale,
+      (p.y - base.y) / scale,
+      (p.z - base.z) / scale
+    ]);
+
+    tf.tidy(() => {
+      const input = tf.tensor2d([features]);
+      const prediction = model.predict(input);
+      const scores = Array.from(prediction.dataSync()); // <-- trasformato in array normale
+
+      const indexed = scores.map((score, i) => ({ score, index: i }));
+      indexed.sort((a, b) => b.score - a.score);
+
+      const best = indexed[0];
+
+      // Mostra segno solo se confidenza > 0.7
+      if (best.score > 0.7) {
+        result.textContent =
+          `Segno: ${reverseLabelMap[best.index]} ${(best.score*100).toFixed(1)}% `
+        } else {
+        result.textContent = "Non riconosciuto";
+      }
+    });
+  });
+
+  const camera = new Camera(video, {
+    onFrame: async () => {
+      if (video.readyState === 4) await hands.send({ image: video });
+    },
+    width: 640,
+    height: 480
+  });
+
+  camera.start();
+}
+
+init();
+</script>
+
+</body>
+</html>
