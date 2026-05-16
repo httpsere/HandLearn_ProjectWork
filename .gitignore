@@ -1,0 +1,13 @@
+node_modules/
+.env
+
+# Modello allenato e dataset gesture (rigenerabili con npm run train)
+# server/model/
+# server/gestures.csv
+
+# File temporanei IDE
+.vscode/
+.idea/
+*.log
+.DS_Store
+Thumbs.db

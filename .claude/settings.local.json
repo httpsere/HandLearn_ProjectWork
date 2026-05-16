@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(rm -f index.html login.html register.html impara.html gioca.html esercitati.html dizionario.html about.html profilo.html)",
+      "Bash(rm -f navbar.php style.css script.js)",
+      "Bash(rm -rf handlearn-client)",
+      "Bash(php --version)",
+      "Read(//c/xampp/php/**)",
+      "Read(//c/wamp64/bin/**)",
+      "Read(//c/laragon/bin/**)",
+      "Bash(node --check server/server.js)",
+      "Bash(node --check js/main.js)"
+    ]
+  }
+}
