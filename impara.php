@@ -105,7 +105,7 @@ include __DIR__ . '/includes/header.php';
                         </span>
                     </a>
                 <?php endforeach; ?>
-            </div>
+            </div> 
 
         </div>
     </div>

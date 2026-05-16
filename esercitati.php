@@ -3,13 +3,13 @@ require_once __DIR__ . '/config/db.php';
 require_once __DIR__ . '/includes/auth.php';
 require_once __DIR__ . '/includes/components/sign_visual.php';
 
-$pageTitle   = 'Esercitati';
+$pageTitle = 'Esercitati';
 $currentPage = 'esercitati';
 
 $nodeUrl = NODE_SERVER_URL;
 
 // Determina il set di segni da praticare
-$mode      = 'alfabeto';   // alfabeto | lezione | segno
+$mode = 'alfabeto';   // alfabeto | lezione | segno
 $setLabels = null;
 $titoloSet = 'Alfabeto';
 
@@ -19,7 +19,7 @@ if (isset($_GET['segno']) && $_GET['segno'] !== '') {
     $titoloSet = 'Segno: ' . htmlspecialchars($_GET['segno']);
 } elseif (isset($_GET['lezione'])) {
     $mode = 'lezione';
-    $lid = (int)$_GET['lezione'];
+    $lid = (int) $_GET['lezione'];
     $stmt = $conn->prepare(
         'SELECT s.parola
          FROM lezioni_segni ls
@@ -50,8 +50,8 @@ include __DIR__ . '/includes/header.php';
         </nav>
         <h1>Esercitati con la webcam</h1>
         <p>Mostra il segno alla telecamera: il modello AI ti dice in tempo reale se è
-           corretto. Il riconoscimento avviene <strong>localmente nel tuo browser</strong>:
-           nessun video viene inviato a nessuno.</p>
+            corretto. Il riconoscimento avviene <strong>localmente nel tuo browser</strong>:
+            nessun video viene inviato a nessuno.</p>
     </div>
 </section>
 
@@ -69,8 +69,8 @@ include __DIR__ . '/includes/header.php';
             <!-- ============ Stage webcam ============ -->
             <div>
                 <div class="practice-stage">
-                    <video    id="video"  autoplay playsinline muted></video>
-                    <canvas   id="canvas" width="640" height="480"></canvas>
+                    <video id="video" autoplay playsinline muted></video>
+                    <canvas id="canvas" width="640" height="480"></canvas>
 
                     <!-- Loader iniziale -->
                     <div id="stageLoader" style="
@@ -114,19 +114,21 @@ include __DIR__ . '/includes/header.php';
                 <div class="target-card" id="targetCard">
                     <h3>Riproduci questo segno</h3>
                     <div class="target-visual" id="targetVisual">
-                        <!-- riempito da practice.js -->
+                        <i
+                        g id="targetImage" src="assets/signs/default.jpg" alt="Segno"
+                          
+                        style="width:100%; height:100%; object-fit:contain; border-radius:16px;">
                     </div>
+                    
                     <div class="target-name" id="targetName">—</div>
                     <div class="actions">
-                        <button class="btn btn-secondary btn-sm" id="prevTargetBtn"
-                                aria-label="Segno precedente">
+                        <button class="btn btn-secondary btn-sm" id="prevTargetBtn" aria-label="Segno precedente">
                             <?= hl_icon('arrow-left', 16) ?>
                         </button>
                         <button class="btn btn-secondary btn-sm" id="skipTargetBtn">
                             Salta
                         </button>
-                        <button class="btn btn-secondary btn-sm" id="nextTargetBtn"
-                                aria-label="Segno successivo">
+                        <button class="btn btn-secondary btn-sm" id="nextTargetBtn" aria-label="Segno successivo">
                             <?= hl_icon('arrow-right', 16) ?>
                         </button>
                     </div>
@@ -173,11 +175,11 @@ include __DIR__ . '/includes/header.php';
 <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js"></script>
 
 <script>
-window.HL = {
-    NODE_URL: <?= json_encode($nodeUrl) ?>,
-    SET_LABELS: <?= json_encode($setLabels) ?>,
-    SET_TITLE:  <?= json_encode($titoloSet) ?>
-};
+    window.HL = {
+        NODE_URL: <?= json_encode($nodeUrl) ?>,
+        SET_LABELS: <?= json_encode($setLabels) ?>,
+        SET_TITLE: <?= json_encode($titoloSet) ?>
+    };
 </script>
 <script src="js/practice.js"></script>
 

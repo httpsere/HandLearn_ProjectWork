@@ -19,10 +19,17 @@ if ($catSlug !== '') {
     $where[]  = 'c.slug = ?';
     $params[] = $catSlug; $types .= 's';
 }
-$sql = 'SELECT s.*, c.nome AS categoria, c.slug AS cat_slug
-        FROM segni s LEFT JOIN categorie c ON c.id = s.categoria_id';
+$sql = 'SELECT s1.*, c.nome AS categoria, c.slug AS cat_slug
+        FROM segni s1
+        INNER JOIN (
+            SELECT MIN(id) as id
+            FROM segni
+            GROUP BY LOWER(parola)
+        ) s2 ON s1.id = s2.id
+        LEFT JOIN categorie c ON c.id = s1.categoria_id';
+
 if ($where) $sql .= ' WHERE ' . implode(' AND ', $where);
-$sql .= ' ORDER BY s.parola';
+$sql .= ' ORDER BY s1.parola';
 
 if ($params) {
     $stmt = $conn->prepare($sql);

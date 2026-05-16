@@ -44,7 +44,7 @@ $ini = $user
 
             <li>
                 <a href="<?= BASE_URL ?>/esercitati.php"
-                   class="cta-link <?= $currentPage === 'esercitati' ? 'active' : '' ?>"
+                   class="<?= $currentPage === 'esercitati' ? 'active' : '' ?>"
                    title="La pratica con AI è il cuore di HandLearn">
                     Esercitati
                 </a>

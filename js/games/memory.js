@@ -19,45 +19,47 @@
 
     let moves = 0;
     let matched = 0;
-    let dirty = false;
 
     let flipped = [];
     let lock = false;
 
-    /* -------------------------------------------------------
-       Shuffle
-    ------------------------------------------------------- */
+    /*
+    |--------------------------------------------------------------------------
+    | Shuffle
+    |--------------------------------------------------------------------------
+    */
+
     function shuffle(arr) {
+
         return arr
             .map(v => [Math.random(), v])
             .sort((a, b) => a[0] - b[0])
             .map(v => v[1]);
     }
 
-    /* -------------------------------------------------------
-       Nome file immagine
-       Esempio:
-       "Ciao" -> ciao.png
-       "Come Stai" -> come-stai.png
-    ------------------------------------------------------- */
-    function getImagePath(word) {
+    /*
+    |--------------------------------------------------------------------------
+    | PATH IMMAGINI
+    |--------------------------------------------------------------------------
+    | Le immagini DEVONO chiamarsi:
+    |
+    | a.png
+    | b.png
+    | c.png
+    |
+    */
 
-        const fileName = word
-            .toLowerCase()
-            .trim()
-            .replace(/\s+/g, '-')
-            .replace(/[àáâãä]/g, 'a')
-            .replace(/[èéêë]/g, 'e')
-            .replace(/[ìíîï]/g, 'i')
-            .replace(/[òóôõö]/g, 'o')
-            .replace(/[ùúûü]/g, 'u');
+    function getImagePath(letter) {
 
-        return `/HandLearn-main/assets/segni_immagini/${fileName}.png`;
+        return `/HandLearn-main/assets/segni_immagini/${letter.toLowerCase()}.png`;
     }
 
-    /* -------------------------------------------------------
-       Costruzione board
-    ------------------------------------------------------- */
+    /*
+    |--------------------------------------------------------------------------
+    | Build Board
+    |--------------------------------------------------------------------------
+    */
+
     function buildBoard() {
 
         board.innerHTML = '';
@@ -81,31 +83,31 @@
 
             el.className = 'mem-card';
 
-            el.dataset.key  = card.key;
-            el.dataset.type = card.type;
-
             const imagePath = getImagePath(card.key);
 
             el.innerHTML = `
+
                 <div class="face-back">?</div>
 
                 ${
                     card.type === 'sign'
+
                     ? `
+
                         <img
                             class="sign-img"
                             src="${imagePath}"
                             alt="${card.key}"
-                            style="display:none;"
                         >
+
                     `
+
                     : `
-                        <span
-                            class="word-label"
-                            style="display:none;"
-                        >
+
+                        <div class="word-label">
                             ${card.key}
-                        </span>
+                        </div>
+
                     `
                 }
             `;
@@ -118,9 +120,12 @@
         });
     }
 
-    /* -------------------------------------------------------
-       Click carta
-    ------------------------------------------------------- */
+    /*
+    |--------------------------------------------------------------------------
+    | Click carta
+    |--------------------------------------------------------------------------
+    */
+
     function onCardClick(el, card) {
 
         if (lock) return;
@@ -135,30 +140,29 @@
         el.classList.add('flipped');
 
         const back = el.querySelector('.face-back');
-        if (back) back.style.display = 'none';
 
-        if (card.type === 'sign') {
+        if (back) {
+            back.style.display = 'none';
+        }
 
-            const img = el.querySelector('.sign-img');
+        const img = el.querySelector('.sign-img');
+        if (img) {
+            img.style.display = 'block';
+        }
 
-            if (img) {
-                img.style.display = 'block';
-            }
-
-        } else {
-
-            const label = el.querySelector('.word-label');
-
-            if (label) {
-                label.style.display = 'block';
-            }
+        const label = el.querySelector('.word-label');
+        if (label) {
+            label.style.display = 'flex';
         }
 
         flipped.push({ el, card });
 
-        /* ---------------------------------------------------
-           Due carte girate
-        --------------------------------------------------- */
+        /*
+        |--------------------------------------------------------------------------
+        | 2 carte
+        |--------------------------------------------------------------------------
+        */
+
         if (flipped.length === 2) {
 
             moves++;
@@ -182,7 +186,6 @@
                 flipped = [];
 
                 if (matched === words.length) {
-
                     setTimeout(endGame, 500);
                 }
 
@@ -197,16 +200,19 @@
                         item.el.classList.remove('flipped');
 
                         const back = item.el.querySelector('.face-back');
+
                         if (back) {
                             back.style.display = 'flex';
                         }
 
                         const img = item.el.querySelector('.sign-img');
+
                         if (img) {
                             img.style.display = 'none';
                         }
 
                         const label = item.el.querySelector('.word-label');
+
                         if (label) {
                             label.style.display = 'none';
                         }
@@ -216,34 +222,36 @@
                     flipped = [];
                     lock = false;
 
-                }, 850);
+                }, 800);
             }
         }
     }
 
-    /* -------------------------------------------------------
-       Start gioco
-    ------------------------------------------------------- */
+    /*
+    |--------------------------------------------------------------------------
+    | Start
+    |--------------------------------------------------------------------------
+    */
+
     function startGame() {
 
         introCard.style.display = 'none';
-        endCard.style.display   = 'none';
-        gameCard.style.display  = '';
-
-        dirty = true;
+        endCard.style.display = 'none';
+        gameCard.style.display = '';
 
         buildBoard();
     }
 
-    /* -------------------------------------------------------
-       Fine gioco
-    ------------------------------------------------------- */
+    /*
+    |--------------------------------------------------------------------------
+    | End
+    |--------------------------------------------------------------------------
+    */
+
     function endGame() {
 
-        dirty = false;
-
         gameCard.style.display = 'none';
-        endCard.style.display  = '';
+        endCard.style.display = '';
 
         endMoves.textContent = moves;
 
@@ -255,37 +263,9 @@
         );
 
         endScore.textContent = score;
-
-        try {
-
-            fetch('../api/save_progress.php', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    type: 'score',
-                    gioco: 'memory',
-                    punteggio: score
-                })
-            }).catch(() => {});
-
-        } catch (e) {}
     }
 
-    /* -------------------------------------------------------
-       Eventi
-    ------------------------------------------------------- */
     startBtn.addEventListener('click', startGame);
     restartBtn.addEventListener('click', startGame);
-
-    window.addEventListener('beforeunload', e => {
-
-        if (dirty) {
-            e.preventDefault();
-            e.returnValue = '';
-        }
-
-    });
 
 })();

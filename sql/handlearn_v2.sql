@@ -97,3 +97,9 @@ SELECT 8, id, 0 FROM segni WHERE parola IN ('Felice','Triste','Amore');
 -- Lezione 9 (Cibo)
 INSERT IGNORE INTO lezioni_segni (lezione_id, segno_id, ordine)
 SELECT 9, id, 0 FROM segni WHERE parola IN ('Acqua','Pane','Caffè','Arancia');
+
+DELETE s1 FROM segni s1
+INNER JOIN segni s2 
+WHERE s1.id > s2.id 
+AND LOWER(s1.parola) = LOWER(s2.parola);
+ALTER TABLE segni ADD UNIQUE KEY unique_parola (parola);

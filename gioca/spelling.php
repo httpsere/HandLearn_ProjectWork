@@ -3,11 +3,11 @@ require_once __DIR__ . '/../config/db.php';
 require_once __DIR__ . '/../includes/auth.php';
 require_once __DIR__ . '/../includes/components/sign_visual.php';
 
-$pageTitle   = 'Spelling';
+$pageTitle = 'Spelling';
 $currentPage = 'gioca';
 
 // Una mini lista di parole semplici da fare in spelling
-$words = ['CIAO','CASA','MAMMA','CANE','SOLE','PANE','ARTE','LIBRO'];
+$words = ['CIAO', 'CASA', 'MAMMA', 'CANE', 'SOLE', 'PANE', 'ARTE', 'LIBRO'];
 include __DIR__ . '/../includes/header.php';
 ?>
 
@@ -43,12 +43,34 @@ include __DIR__ . '/../includes/header.php';
                 <span class="score-pill"><?= hl_icon('star', 16) ?> <span id="spScore">0</span></span>
                 <span class="muted text-sm" id="spRound">Parola 1 / <?= count($words) ?></span>
             </div>
-            <div id="spLetters" class="flex" style="justify-content:center; flex-wrap:wrap; margin-bottom: var(--s-6);"></div>
+
+            <div id="spLetters" class="flex" style="justify-content:center; flex-wrap:wrap; margin-bottom: var(--s-6);">
+            </div>
             <input type="text" id="spInput" class="form-control" autocomplete="off"
-                   style="text-align:center; font-size: 1.4rem; font-weight: 700; max-width: 320px; margin: 0 auto;"
-                   placeholder="Scrivi la parola...">
+                style="text-align:center; font-size: 1.4rem; font-weight: 700; max-width: 320px; margin: 0 auto;"
+                placeholder="Scrivi la parola...">
             <p id="spHint" class="text-sm muted mt-3"></p>
+
+
             <button id="spCheck" class="btn btn-primary btn-lg mt-4">Verifica</button>
+
+            <div class="mt-4 flex-between flex-wrap">
+
+                <div></div>
+
+                <div style="display:flex; gap: var(--s-3);">
+
+                    <a href="<?= BASE_URL ?>/gioca.php" class="btn btn-secondary btn-lg">
+
+                        <?= hl_icon('arrow-left', 16) ?>
+
+                        Torna ai giochi
+
+                    </a>
+
+                </div>
+
+            </div>
         </div>
 
         <div id="endCard" class="game-stage end-screen" style="display:none;">
@@ -78,7 +100,7 @@ include __DIR__ . '/../includes/header.php';
 </section>
 
 <script>
-window.SPELLING_WORDS = <?= json_encode($words) ?>;
+    window.SPELLING_WORDS = <?= json_encode($words) ?>;
 </script>
 <script src="../js/games/spelling.js"></script>
 
