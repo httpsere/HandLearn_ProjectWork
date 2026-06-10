@@ -174,6 +174,6 @@ include __DIR__ . '/../includes/header.php';
     window.MEMORY_WORDS = <?= json_encode($words) ?>;
 </script>
 
-<script src="/HandLearn-main/js/games/memory.js"></script>
+<script src="<?= BASE_URL ?>/js/games/memory.js"></script>
 
 <?php include __DIR__ . '/../includes/footer.php'; ?>

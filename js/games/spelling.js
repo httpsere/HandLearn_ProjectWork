@@ -23,17 +23,7 @@
         const colors = ['violet','amber','emerald','sky','rose','pink'];
         const c = colors[L.charCodeAt(0) % colors.length];
         return `<div class="sign sign-${c}" style="width:84px; height:84px; border-radius:14px;">
-          <svg viewBox="0 0 96 96" aria-hidden="true">
-            <g fill="white" stroke="rgba(0,0,0,.08)" stroke-width="1">
-              <rect x="22" y="20" width="10" height="46" rx="5"/>
-              <rect x="36" y="14" width="10" height="52" rx="5"/>
-              <rect x="50" y="10" width="10" height="56" rx="5"/>
-              <rect x="64" y="18" width="10" height="48" rx="5"/>
-              <rect x="6"  y="32" width="10" height="34" rx="5" transform="rotate(-30 11 49)"/>
-              <path d="M8 60 Q8 88 44 88 H 70 Q 88 88 88 68 V 50 Q 88 42 76 42 V 60 Z"/>
-            </g>
-          </svg>
-          <span class="label">${L}</span>
+            <img src="../assets/segni_immagini/${L}.png" alt="${L}" style="width:100px; height:100px;">
         </div>`;
     }
 

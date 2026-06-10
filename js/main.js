@@ -8,6 +8,7 @@ document.addEventListener('DOMContentLoaded', () => {
     initDictionarySearch();
     initAlphabetFilter();
     initCategoryFilter();
+    initLevelFilter();
 });
 
 /* ---- Mobile menu toggle ---- */
@@ -69,6 +70,24 @@ function initCategoryFilter() {
             const cat = btn.dataset.category;
             cards.forEach(c => {
                 c.style.display = (cat === 'all' || c.dataset.lessonCategory === cat) ? '' : 'none';
+            });
+        });
+    });
+}
+
+/* ---- Filtro livello (impara) ---- */
+function initLevelFilter() {
+    const buttons = document.querySelectorAll('[data-level]');
+    if (!buttons.length) return;
+    const cards = document.querySelectorAll('[data-lesson-level]');
+    buttons.forEach(btn => {
+        btn.addEventListener('click', e => {
+            e.preventDefault();
+            buttons.forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            const level = btn.dataset.level;
+            cards.forEach(c => {
+                c.style.display = (level === 'all' || c.dataset.lessonLevel === level) ? '' : 'none';
             });
         });
     });

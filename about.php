@@ -1,9 +1,20 @@
 <?php
 require_once __DIR__ . '/includes/auth.php';
 require_once __DIR__ . '/includes/components/sign_visual.php';
+require_once __DIR__ . '/config/db.php';
 
 $pageTitle   = 'Chi siamo';
 $currentPage = 'about';
+
+$parole = [
+    'Uno' => ['nome' => 'Uno', 'immagine' => $conn->query("SELECT immagine FROM segni WHERE parola = '1' LIMIT 1")->fetch_assoc()['immagine'] ?? ''],
+    'Due' => ['nome' => 'Due', 'immagine' => $conn->query("SELECT immagine FROM segni WHERE parola = '2' LIMIT 1")->fetch_assoc()['immagine'] ?? ''],
+    'Tre' => ['nome' => 'Tre', 'immagine' => $conn->query("SELECT immagine FROM segni WHERE parola = '3' LIMIT 1")->fetch_assoc()['immagine'] ?? ''],
+    'Quattro' => ['nome' => 'Quattro', 'immagine' => $conn->query("SELECT immagine FROM segni WHERE parola = '4' LIMIT 1")->fetch_assoc()['immagine'] ?? ''],
+    'Cinque' => ['nome' => 'Cinque', 'immagine' => $conn->query("SELECT immagine FROM segni WHERE parola = '5' LIMIT 1")->fetch_assoc()['immagine'] ?? ''],
+    'Sei' => ['nome' => 'Sei', 'immagine' => $conn->query("SELECT immagine FROM segni WHERE parola = '6' LIMIT 1")->fetch_assoc()['immagine'] ?? '']
+];
+
 include __DIR__ . '/includes/header.php';
 ?>
 
@@ -40,12 +51,9 @@ include __DIR__ . '/includes/header.php';
                 </p>
             </div>
             <div class="grid" style="grid-template-columns: repeat(3, 1fr); gap: var(--s-3);">
-                <?= render_sign_visual('Ciao',   ['color' => 'violet']) ?>
-                <?= render_sign_visual('Amico',  ['color' => 'amber']) ?>
-                <?= render_sign_visual('Grazie', ['color' => 'emerald']) ?>
-                <?= render_sign_visual('Mamma',  ['color' => 'pink']) ?>
-                <?= render_sign_visual('Felice', ['color' => 'sky']) ?>
-                <?= render_sign_visual('Acqua',  ['color' => 'rose']) ?>
+                <?php foreach ($parole as $w): ?>
+                    <?= render_sign_visual($w['nome'], ['color' => hl_pick_sign_color($w['nome']), 'label' => true, 'icona' => $w['immagine']]) ?>
+                <?php endforeach; ?>
             </div>
         </div>
     </div>

@@ -18,9 +18,11 @@ $ini = $user
         <a href="<?= BASE_URL ?>/index.php"
            class="navbar-brand"
            aria-label="HandLearn home">
-
             <span class="logo-mark">
-                <?= hl_icon('sparkles', 22) ?>
+                <img src="<?= BASE_URL ?>/assets/segni_immagini/mani.png"
+                    alt="HandLearn Logo"
+                    width="22"
+                    height="22">
             </span>
 
             HandLearn

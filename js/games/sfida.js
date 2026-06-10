@@ -77,7 +77,7 @@
                 object-fit:contain;
                 border-radius:16px;
             "
-            onerror="this.src='../assets/segni_immagini/default.png'"
+            onerror="this.src='../assets/default.svg'"
         >
     `;
   }

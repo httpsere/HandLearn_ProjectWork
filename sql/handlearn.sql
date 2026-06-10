@@ -45,7 +45,6 @@ CREATE TABLE IF NOT EXISTS segni (
     tipo          VARCHAR(40) DEFAULT 'Sostantivo',
     descrizione   TEXT,
     immagine      VARCHAR(20) DEFAULT '🤟',
-    video_url     VARCHAR(255) DEFAULT NULL,
     categoria_id  INT DEFAULT NULL,
     livello       ENUM('principiante','intermedio','avanzato') DEFAULT 'principiante',
     FOREIGN KEY (categoria_id) REFERENCES categorie(id) ON DELETE SET NULL

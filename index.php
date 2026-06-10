@@ -13,6 +13,15 @@ $totLezioni = (int)($conn->query('SELECT COUNT(*) AS n FROM lezioni')->fetch_ass
 $totSegni   = (int)($conn->query('SELECT COUNT(*) AS n FROM segni')->fetch_assoc()['n']   ?? 0);
 $totUtenti  = (int)($conn->query('SELECT COUNT(*) AS n FROM utenti')->fetch_assoc()['n']  ?? 0);
 
+$parole = [
+    'A' => ['nome' => 'A', 'immagine' => $conn->query("SELECT immagine FROM segni WHERE parola = 'A' LIMIT 1")->fetch_assoc()['immagine'] ?? ''],
+    'B' => ['nome' => 'B', 'immagine' => $conn->query("SELECT immagine FROM segni WHERE parola = 'B' LIMIT 1")->fetch_assoc()['immagine'] ?? ''],
+    'C' => ['nome' => 'C', 'immagine' => $conn->query("SELECT immagine FROM segni WHERE parola = 'C' LIMIT 1")->fetch_assoc()['immagine'] ?? ''],
+    'D' => ['nome' => 'D', 'immagine' => $conn->query("SELECT immagine FROM segni WHERE parola = 'D' LIMIT 1")->fetch_assoc()['immagine'] ?? ''],
+    'E' => ['nome' => 'E', 'immagine' => $conn->query("SELECT immagine FROM segni WHERE parola = 'E' LIMIT 1")->fetch_assoc()['immagine'] ?? ''],
+    'F' => ['nome' => 'F', 'immagine' => $conn->query("SELECT immagine FROM segni WHERE parola = 'F' LIMIT 1")->fetch_assoc()['immagine'] ?? '']
+];
+
 include __DIR__ . '/includes/header.php';
 ?>
 
@@ -45,7 +54,7 @@ include __DIR__ . '/includes/header.php';
                     </a>
                 <?php else: ?>
                     <a href="register.php" class="btn btn-primary btn-xl">
-                        Inizia gratis
+                        Inizia ora
                         <?= hl_icon('arrow-right', 20) ?>
                     </a>
                     <a href="esercitati.php" class="btn btn-secondary btn-xl">
@@ -189,12 +198,9 @@ include __DIR__ . '/includes/header.php';
                 </a>
             </div>
             <div class="grid" style="grid-template-columns: repeat(3, 1fr); gap:var(--s-3);">
-                <?= render_sign_visual('Ciao',    ['color' => 'violet']) ?>
-                <?= render_sign_visual('Grazie',  ['color' => 'amber']) ?>
-                <?= render_sign_visual('Amico',   ['color' => 'emerald']) ?>
-                <?= render_sign_visual('Mamma',   ['color' => 'pink']) ?>
-                <?= render_sign_visual('Felice',  ['color' => 'sky']) ?>
-                <?= render_sign_visual('Acqua',   ['color' => 'rose']) ?>
+                <?php foreach ($parole as $w): ?>
+                    <?= render_sign_visual($w['nome'], ['color' => hl_pick_sign_color($w['nome']), 'label' => true, 'icona' => $w['immagine']]) ?>
+                <?php endforeach; ?>
             </div>
         </div>
     </div>
@@ -266,7 +272,7 @@ include __DIR__ . '/includes/header.php';
                     </a>
                 <?php else: ?>
                     <a href="register.php" class="btn btn-accent btn-xl">
-                        Registrati gratis
+                        Registrati
                         <?= hl_icon('arrow-right', 20) ?>
                     </a>
                     <a href="esercitati.php" class="btn btn-secondary btn-xl"

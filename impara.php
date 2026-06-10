@@ -9,6 +9,12 @@ $categorie = $conn->query(
      FROM categorie c ORDER BY c.id'
 )->fetch_all(MYSQLI_ASSOC);
 
+$livelli = [
+    ['slug' => 'principiante', 'nome' => 'Principiante', 'color' => '#10b981', 'n' => $conn->query("SELECT COUNT(*) FROM lezioni WHERE livello = 'principiante'")->fetch_row()[0]],
+    ['slug' => 'intermedio',  'nome' => 'Intermedio',  'color' => '#f59e0b', 'n' => $conn->query("SELECT COUNT(*) FROM lezioni WHERE livello = 'intermedio'")->fetch_row()[0]],
+    ['slug' => 'avanzato',   'nome' => 'Avanzato',   'color' => '#ef4444', 'n' => $conn->query("SELECT COUNT(*) FROM lezioni WHERE livello = 'avanzato'")->fetch_row()[0]],
+];
+
 $lezioni = $conn->query(
     'SELECT l.*, c.slug AS cat_slug, c.nome AS cat_nome
      FROM lezioni l
@@ -58,15 +64,12 @@ include __DIR__ . '/includes/header.php';
 
                 <h4>Livello</h4>
                 <ul class="cat-list">
-                    <li><a href="#" data-category="principiante">
-                        <span><span class="dot" style="color:#10b981; margin-right:6px;"></span>Principiante</span>
-                    </a></li>
-                    <li><a href="#" data-category="intermedio">
-                        <span><span class="dot" style="color:#f59e0b; margin-right:6px;"></span>Intermedio</span>
-                    </a></li>
-                    <li><a href="#" data-category="avanzato">
-                        <span><span class="dot" style="color:#ef4444; margin-right:6px;"></span>Avanzato</span>
-                    </a></li>
+                    <?php foreach ($livelli as $l): ?>
+                        <li><a href="#" data-level="<?= htmlspecialchars($l['slug']) ?>">
+                            <span><span class="dot" style="color:<?= htmlspecialchars($l['color']) ?>; margin-right:6px;"></span><?= htmlspecialchars($l['nome']) ?></span>
+                            <span class="count"><?= (int)$l['n'] ?></span>
+                        </a></li>
+                    <?php endforeach; ?>
                 </ul>
 
                 <a href="esercitati.php" class="btn btn-primary btn-block mt-6">
@@ -84,7 +87,7 @@ include __DIR__ . '/includes/header.php';
                        data-lesson-category="<?= htmlspecialchars($l['cat_slug'] ?? '') ?>"
                        data-lesson-level="<?= htmlspecialchars($l['livello']) ?>">
 
-                        <?= render_sign_visual($l['titolo'], ['color' => $color, 'label' => false]) ?>
+                        <?= render_sign_visual($l['titolo'], ['color' => $color, 'label' => false, 'icona' => $l['icona']]) ?>
 
                         <div>
                             <h3><?= htmlspecialchars($l['titolo']) ?></h3>

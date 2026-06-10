@@ -115,7 +115,7 @@ include __DIR__ . '/includes/header.php';
                     <h3>Riproduci questo segno</h3>
                     <div class="target-visual" id="targetVisual">
                         <i
-                        g id="targetImage" src="assets/signs/default.jpg" alt="Segno"
+                        g id="targetImage" src="assets/default.svg" alt="Segno"
                           
                         style="width:100%; height:100%; object-fit:contain; border-radius:16px;">
                     </div>

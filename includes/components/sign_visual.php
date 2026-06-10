@@ -63,23 +63,29 @@ if (!function_exists('render_sign_visual')) {
 
         // Se immagine non esiste usa default
         if (!file_exists($fullPath)) {
-            $imagePath = 'assets/signs/default.png';
+            $imagePath = 'assets/default.svg';
         }
 
         $html  = '<div class="sign sign-' . htmlspecialchars($color) . $extra . '">';
 
-        $html .= '
-            <img
-                src="' . htmlspecialchars($imagePath) . '"
-                alt="' . htmlspecialchars($name) . '"
-                class="sign-real-image"
-                loading="lazy"
-            >
-        ';
+        if (isset($opts['icona']) && $opts['icona']) {
+            $html .= '<h1 class="sign-image-wrapper">
+                ' . htmlspecialchars($opts['icona']) . '
+            </h1>';
+        }
+        else {
+            $html .= '
+                <img
+                    src="' . htmlspecialchars($imagePath) . '"
+                    alt="' . htmlspecialchars($name) . '"
+                    class="sign-real-image"
+                    loading="lazy"
+                >
+            ';
+        }
 
         // Label testo
         if ($label) {
-
             $html .= '
                 <span class="label">'
                     . htmlspecialchars($name) .

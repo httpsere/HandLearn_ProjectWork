@@ -23,11 +23,11 @@ if (!$lezione) {
 
 // Segni associati alla lezione (se la migrazione v2 è eseguita)
 $stmt2 = $conn->prepare(
-    'SELECT s.*, ls.ordine
+    'SELECT s.*
      FROM lezioni_segni ls
      JOIN segni s ON s.id = ls.segno_id
      WHERE ls.lezione_id = ?
-     ORDER BY ls.ordine, s.parola'
+     ORDER BY s.parola'
 );
 $stmt2->bind_param('i', $id);
 $stmt2->execute();
@@ -47,7 +47,7 @@ if (!$segni && !empty($lezione['categoria_id'])) {
 $lezioniAltre = [];
 if (!empty($lezione['categoria_id'])) {
     $stmt4 = $conn->prepare(
-        'SELECT id, titolo, descrizione, livello, durata_min FROM lezioni
+        'SELECT id, titolo, descrizione, livello, durata_min, icona FROM lezioni
          WHERE categoria_id = ? AND id <> ? ORDER BY id LIMIT 4'
     );
     $stmt4->bind_param('ii', $lezione['categoria_id'], $id);
@@ -81,7 +81,7 @@ include __DIR__ . '/includes/header.php';
 
         <!-- Hero della lezione -->
         <div class="lesson-hero">
-            <?= render_sign_visual($lezione['titolo'], ['color' => $color, 'size' => 'lg', 'label' => false]) ?>
+            <?= render_sign_visual($lezione['titolo'], ['color' => $color, 'size' => 'lg', 'label' => false, 'icona' => $lezione['icona']]) ?>
             <div>
                 <div class="flex gap-2 mb-3">
                     <span class="badge <?= $badgeMap[$lezione['livello']] ?? 'badge-primary' ?>">
@@ -113,13 +113,13 @@ include __DIR__ . '/includes/header.php';
         <!-- Contenuto: i segni della lezione -->
         <?php if ($segni): ?>
             <h2 class="mb-5">I segni di questa lezione</h2>
-            <div class="grid" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));">
+            <div class="grid" style="grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: var(--s-6);">
                 <?php foreach ($segni as $s):
                     $sc = hl_pick_sign_color($s['parola']);
                 ?>
                     <div class="card hoverable" style="overflow:hidden;">
                         <a href="segno.php?id=<?= (int)$s['id'] ?>" style="display:block;">
-                            <?= render_sign_visual($s['parola'], ['color' => $sc, 'label' => false]) ?>
+                            <?= render_sign_visual($s['parola'], ['color' => $sc, 'label' => false, 'icona' => $s['immagine']]) ?>
                         </a>
                         <div class="card-body">
                             <h3><?= htmlspecialchars($s['parola']) ?></h3>
@@ -153,7 +153,7 @@ include __DIR__ . '/includes/header.php';
             <div class="grid grid-2">
                 <?php foreach ($lezioniAltre as $alt): ?>
                     <a href="lezione.php?id=<?= (int)$alt['id'] ?>" class="lesson-card">
-                        <?= render_sign_visual($alt['titolo'], ['color' => 'violet', 'label' => false]) ?>
+                        <?= render_sign_visual($alt['titolo'], ['color' => 'violet', 'label' => false, 'icona' => $alt['icona']]) ?>
                         <div>
                             <h3><?= htmlspecialchars($alt['titolo']) ?></h3>
                             <p><?= htmlspecialchars($alt['descrizione']) ?></p>

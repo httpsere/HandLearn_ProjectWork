@@ -63,7 +63,7 @@
                         background:white;
                         padding:10px;
                     "
-                    onerror="this.src='../assets/segni_immagini/default.png'"
+                    onerror="this.src='../assets/default.svg'"
                 >
             </div>
         `;

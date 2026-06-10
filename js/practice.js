@@ -81,7 +81,7 @@
     // usa immagini locali invece della SVG generata
     els.targetVisual.innerHTML = `
         <img
-            src="/HandLearn-main/assets/segni_immagini/${label.toLowerCase()}.png"
+            src="assets/segni_immagini/${label.toLowerCase()}.png"
             alt="${label}"
             style="
                 width:100%;
@@ -91,7 +91,7 @@
                 background:#fff;
                 padding:10px;
             "
-            onerror="this.src='/HandLearn-main/assets/segni_immagini/default.jpg'"
+            onerror="this.src='assets/default.svg'"
         >
     `;
 

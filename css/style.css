@@ -1012,7 +1012,7 @@ h4 { font-size: 1.05rem; }
     transform-style: preserve-3d;
     position: relative;
 }
-.mem-card.flipped { background: var(--surface); color: var(--text); border: 2px solid var(--primary); }
+.mem-card.flipped { background: var(--surface); color: var(--text); border: 2px solid var(--primary);  }
 .mem-card.flipped .sign-svg { display: block; }
 .mem-card .face-back { font-size: 1.6rem; }
 .mem-card.matched   { background: var(--success-50); color: #047857; border: 2px solid var(--success); cursor: default; }

@@ -109,7 +109,7 @@ include __DIR__ . '/includes/header.php';
                     <a href="segno.php?id=<?= (int)$s['id'] ?>"
                        class="word-card"
                        data-word="<?= htmlspecialchars($s['parola']) ?>">
-                        <?= render_sign_visual($s['parola'], ['color' => $color, 'label' => false]) ?>
+                        <?= render_sign_visual($s['parola'], ['color' => $color, 'label' => false, 'icona' => $s['immagine']]) ?>
                         <div class="word-card-body">
                             <h3><?= htmlspecialchars($s['parola']) ?></h3>
                             <p><?= htmlspecialchars($s['tipo']) ?></p>
