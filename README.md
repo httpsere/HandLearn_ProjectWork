@@ -60,7 +60,7 @@ HandLearn-main/
 
 ---
 
-## Cosa c'è di nuovo nella v2
+## Versione 2 aggiornata
 
 1. **Design system v2** — palette indaco/ambra/smeraldo, tipografia
    Plus Jakarta Sans + Inter, ombre soft, micro-animazioni, focus accessibili,
